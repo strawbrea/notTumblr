@@ -22,7 +22,6 @@ comments_collection = quotes_db.comments_collection
 
 import uuid
 
-
 @app.route("/", methods=["GET"])
 @app.route("/quotes", methods=["GET"])
 def get_quotes():
@@ -37,18 +36,23 @@ def get_quotes():
 
     user = session_data["user"]
     quotes_collection = quotes_db.quotes_collection
-    # Fetch user's own quotes
-    my_quotes = list(quotes_collection.find({"owner": user}))
-    # Fetch public quotes
-    public_quotes = list(quotes_collection.find({"public": True}))
 
-    for quote in my_quotes + public_quotes:
-        quote["_id"] = str(quote["_id"])
+    search_term = request.args.get('search_term', '').strip()
 
-    return render_template("quotes.html", my_quotes=my_quotes, public_quotes=public_quotes, user=user)
-    response = make_response(html)
-    response.set_cookie("session_id", session_id)
-    return response
+    if search_term:
+        data = list(quotes_collection.find({"$or": [
+            {"public": True, "text": {"$regex": search_term, "$options": "i"}},
+            {"owner": user, "text": {"$regex": search_term, "$options": "i"}}
+        ]}))
+        for item in data:
+            item["_id"] = str(item["_id"])
+        return render_template('quotes.html', data=data, user=user)
+    else:
+        my_quotes = list(quotes_collection.find({"owner": user}))
+        public_quotes = list(quotes_collection.find({"public": True}))
+        for quote in my_quotes + public_quotes:
+            quote["_id"] = str(quote["_id"])
+        return render_template("quotes.html", my_quotes=my_quotes, public_quotes=public_quotes, user=user)
 
 
 @app.route("/login", methods=["GET"])
@@ -165,11 +169,12 @@ def post_add():
     text = request.form.get("text", "")
     author = request.form.get("author", "")
     public = request.form.get("public", "") == "on"
+    disable_comments = request.form.get("disable_comments") == "on"
     if text != "" and author != "":
         # open the quotes collection
         quotes_collection = quotes_db.quotes_collection
         # insert the quote
-        quote_data = {"owner": user, "text": text, "author": author, "public":public}
+        quote_data = {"owner": user, "text": text, "author": author, "public":public, "disable_comments":disable_comments}
         print(quote_data)
         quotes_collection.insert_one(quote_data)
     # usually do a redirect('....')
@@ -240,10 +245,12 @@ def get_delete(id=None):
             return redirect("/quotes")  # Redirecting for simplicity
     return redirect("/quotes")    
 
-
 @app.route('/search')
 def search():
-    search_term = request.args.get('search_term', '')
+    search_term = request.args.get('search_term', '').strip()
+    if not search_term:
+        return redirect("/quotes")
+    
     session_id = request.cookies.get("session_id", None)
     session_collection = session_db.session_collection
     session_data = session_collection.find_one({"session_id": session_id})
@@ -253,10 +260,14 @@ def search():
 
     user = session_data['user']
     quotes_collection = quotes_db.quotes_collection
+
     data = list(quotes_collection.find({"$or": [
-        {"public": True, "text": {"$regex": search_term}},
-        {"owner": user, "text": {"$regex": search_term}}
+        {"public": True, "text": {"$regex": search_term, "$options": "i"}},
+        {"owner": user, "text": {"$regex": search_term, "$options": "i"}}
     ]}))
+
+    print(f"Search term: {search_term}")  # Debugging output
+    print(f"Found {len(data)} items")  # Debugging output
 
     for item in data:
         item["_id"] = str(item["_id"])

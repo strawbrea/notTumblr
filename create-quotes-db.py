@@ -18,6 +18,7 @@ quotes_collection = quotes_db.quotes_collection
 
 # create comments collection
 comments_collection = quotes_db.comments
+quotes_collection.create_index([("text", "text")])
 
 # empty the collection
 quotes_collection.delete_many({})
