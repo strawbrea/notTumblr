@@ -353,3 +353,26 @@ def edit_comment(comment_id):
             return render_template('edit_comment.html', comment=comment)
         else:
             return redirect("/quote/<id> ")
+
+@app.route('/comment_delete/<comment_id>', methods=['GET'])
+def comment_delete(comment_id):
+    session_id = request.cookies.get("session_id", None)
+    if not session_id:
+        return redirect("/login")
+
+    session_data = session_db.session_collection.find_one({"session_id": session_id})
+    if not session_data:
+        return redirect("/login")
+
+    user = session_data['user']
+    comment = comments_collection.find_one({"_id": ObjectId(comment_id)})
+
+    # Fetch the quote to check if the user is the quote owner
+    quote = quotes_collection.find_one({"_id": ObjectId(comment['quote_id'])})
+    if not quote:
+        return "Quote not found", 404
+
+    # Check if the current user is the comment author or the quote owner
+    if comment['author'] == user or quote['owner'] == user:
+        comments_collection.delete_one({"_id": ObjectId(comment_id)})
+        return redirect(f'/quote/{comment["quote_id"]}')
