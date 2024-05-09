@@ -22,11 +22,14 @@
             <td>{{ item["text"] }}</td>
             <td><em>--</em> <em>{{ item["author"] }}</em></td>
         </tr>
+        <tr><a href="/quotes">Back to quotes</a></tr>
         {% endfor %}
     </table>
     {% else %}
         <!-- No search results found -->
+        {% if request.args.get('search_term') %}
         <p>No quotes found matching your search criteria.</p>
+    {% endif %}
 
         <!-- Public Feed Section -->
         <h2>Public Feed</h2>
