@@ -10,7 +10,7 @@ quotes_data = [
 # create a mongita client connection
 client = MongitaClientDisk()
 
-# create a movie database
+# create a quote database
 quotes_db = client.quotes_db
 
 # create a quotes collection

@@ -5,28 +5,48 @@
     <body>
         <h1>Quotes</h1>
         <hr>
+        <!-- Search Form -->
+        <form action="/search" method="get">
+            <input type="text" name="search_term" placeholder="Search quotes...">
+            <button type="submit">Search</button>
+        </form>
+
+        <!-- Public Feed Section -->
+        <h2>Public Feed</h2>
         <table>
-            {% for item in data %}
+            {% for item in public_quotes %}
             <tr>
-                <td>
-                    [{{item["owner"]}}]
-                </td>
-                <td>
-                    {{item["text"]}}
-                </td>
-                <td>
-                    <em>--</em>
-                    <em>{{item["author"]}}</em>
-                </td>
+                <td>[{{ item["owner"] }}]</td>
+                <td>{{ item["text"] }}</td>
+                <td><em>--</em> <em>{{ item["author"] }}</em></td>
                 <td>
                     [
-                    <a href="/edit/{{item['_id']}}"><i class="material-icons">mode_edit</i></a>
-                    <a href="/delete/{{item['_id']}}"><i class="material-icons">delete</i></a>
+                    <a href="/edit/{{ item['_id'] }}"><i class="material-icons">mode_edit</i></a>
+                    <a href="/delete/{{ item['_id'] }}"><i class="material-icons">delete</i></a>
                     ]
                 </td>
             </tr>
             {% endfor %}
         </table>
+
+        <!-- My Quotes Section -->
+        <h2>My Quotes</h2>
+        <table>
+            {% for item in my_quotes %}
+            <tr>
+                <td>[{{ item["owner"] }}]</td>
+                <td>{{ item["text"] }}</td>
+                <td><em>--</em> <em>{{ item["author"] }}</em></td>
+                <td>
+                    [
+                    <a href="/edit/{{ item['_id'] }}"><i class="material-icons">mode_edit</i></a>
+                    <a href="/delete/{{ item['_id'] }}"><i class="material-icons">delete</i></a>
+                    ]
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+
         <hr/>
         <a href="/add">Add a new quote!</a>
         <hr />

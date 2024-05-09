@@ -23,34 +23,24 @@ import uuid
 def get_quotes():
     session_id = request.cookies.get("session_id", None)
     if not session_id:
-        response = redirect("/login")
-        return response
-    # open the session collection
+        return redirect("/login")
+    
     session_collection = session_db.session_collection
-    # get the data for this session
-    session_data = list(session_collection.find({"session_id": session_id}))
-    if len(session_data) == 0:
-        response = redirect("/logout")
-        return response
-    assert len(session_data) == 1
-    session_data = session_data[0]
-    # get some information from the session
-    user = session_data.get("user", "unknown user")
-    # open the quotes collection
+    session_data = session_collection.find_one({"session_id": session_id})
+    if not session_data:
+        return redirect("/logout")
+
+    user = session_data["user"]
     quotes_collection = quotes_db.quotes_collection
-    # load the data
-    data = list(quotes_collection.find({"owner": user}))
-    publicdata = list(quotes_collection.find({"public": True}))
-    data = data + publicdata
-    for item in data:
-        item["_id"] = str(item["_id"])
-        item["object"] = ObjectId(item["_id"])
-    # display the data
-    html = render_template(
-        "quotes.html",
-        data=data,
-        user=user,
-    )
+    # Fetch user's own quotes
+    my_quotes = list(quotes_collection.find({"owner": user}))
+    # Fetch public quotes
+    public_quotes = list(quotes_collection.find({"public": True}))
+
+    for quote in my_quotes + public_quotes:
+        quote["_id"] = str(quote["_id"])
+
+    return render_template("quotes.html", my_quotes=my_quotes, public_quotes=public_quotes, user=user)
     response = make_response(html)
     response.set_cookie("session_id", session_id)
     return response
@@ -231,3 +221,26 @@ def get_delete(id=None):
         quotes_collection.delete_one({"_id": ObjectId(id)})
     # return to the quotes page
     return redirect("/quotes")
+
+@app.route('/search')
+def search():
+    search_term = request.args.get('search_term', '')
+    session_id = request.cookies.get("session_id", None)
+    session_collection = session_db.session_collection
+    session_data = session_collection.find_one({"session_id": session_id})
+
+    if session_data is None:
+        return redirect("/login")
+
+    user = session_data['user']
+    quotes_collection = quotes_db.quotes_collection
+    # Search for public quotes or user's own quotes containing the search term
+    data = list(quotes_collection.find({"$or": [
+        {"public": True, "text": {"$regex": search_term}},
+        {"owner": user, "text": {"$regex": search_term}}
+    ]}))
+
+    for item in data:
+        item["_id"] = str(item["_id"])
+
+    return render_template('quotes.html', data=data, user=user)
