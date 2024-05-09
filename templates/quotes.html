@@ -17,8 +17,9 @@
         {% for item in public_quotes %}
         <tr>
             <td>[{{ item["owner"] }}]</td>
-            <td>{{ item["text"] }}</td>
+            <td><a href="/quote/{{ item['_id'] }}">{{ item["text"] }}</a></td>
             <td><em>--</em> <em>{{ item["author"] }}</em></td>
+            <td>
             <td>
             </td>
         </tr>
@@ -31,7 +32,7 @@
         {% for item in my_quotes %}
         <tr>
             <td>[{{ item["owner"] }}]</td>
-            <td>{{ item["text"] }}</td>
+            <td><a href="/quote/{{ item['_id'] }}">{{ item["text"] }}</a></td>
             <td><em>--</em> <em>{{ item["author"] }}</em></td>
             <td>
                 [

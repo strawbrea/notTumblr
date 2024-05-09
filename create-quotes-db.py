@@ -2,9 +2,9 @@
 import json
 from mongita import MongitaClientDisk
 
-quotes_data = [
-    {"text": "I'm hungry. When's lunch?", "author": "Dorothy","owner":"Greg"},
-    {"text": "You threw that ball. You go get it.", "author": "Suzy", "owner":"Dorothy"},
+quotes_data = quotes_data = [
+    {"text": "I'm hungry. When's lunch?", "author": "Dorothy", "owner": "Greg", "allow_comments": True},
+    {"text": "You threw that ball. You go get it.", "author": "Suzy", "owner": "Dorothy", "allow_comments": False},
 ]
 
 # create a mongita client connection
@@ -15,6 +15,9 @@ quotes_db = client.quotes_db
 
 # create a quotes collection
 quotes_collection = quotes_db.quotes_collection
+
+# create comments collection
+comments_collection = quotes_db.comments
 
 # empty the collection
 quotes_collection.delete_many({})

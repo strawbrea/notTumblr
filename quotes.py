@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, make_response, redirect
 from mongita import MongitaClientDisk
 from bson import ObjectId
+from bson.errors import InvalidId
+import logging
 
 from passwords import hash_password  # (password) -> hashed_password, salt
 from passwords import check_password # (password, saved_hashed_password, salt):
@@ -14,6 +16,9 @@ client = MongitaClientDisk()
 quotes_db = client.quotes_db
 session_db = client.session_db
 user_db = client.user_db
+
+quotes_collection = quotes_db.quotes_collection
+comments_collection = quotes_db.comments_collection
 
 import uuid
 
@@ -235,6 +240,7 @@ def get_delete(id=None):
             return redirect("/quotes")  # Redirecting for simplicity
     return redirect("/quotes")    
 
+
 @app.route('/search')
 def search():
     search_term = request.args.get('search_term', '')
@@ -247,7 +253,6 @@ def search():
 
     user = session_data['user']
     quotes_collection = quotes_db.quotes_collection
-    # Search for public quotes or user's own quotes containing the search term
     data = list(quotes_collection.find({"$or": [
         {"public": True, "text": {"$regex": search_term}},
         {"owner": user, "text": {"$regex": search_term}}
@@ -257,3 +262,94 @@ def search():
         item["_id"] = str(item["_id"])
 
     return render_template('quotes.html', data=data, user=user)
+
+@app.route('/add_comment/<quote_id>', methods=['POST'])
+def add_comment(quote_id):
+    session_id = request.cookies.get("session_id", None)
+    session_data = session_db.session_collection.find_one({"session_id": session_id})
+    if not session_data:
+        return redirect("/login")
+
+    user = session_data['user']
+    quote = quotes_collection.find_one({"_id": ObjectId(quote_id)})
+    if quote:
+        comment_text = request.form.get("comment")
+        comments_collection.insert_one({"quote_id": quote_id, "text": comment_text, "author": user})
+
+    return redirect(f"/quote/{quote_id}")
+
+@app.route('/delete_comment/<comment_id>', methods=['GET'])
+def delete_comment(comment_id):
+    session_id = request.cookies.get("session_id", None)
+    session_data = session_db.session_collection.find_one({"session_id": session_id})
+    if not session_data:
+        return redirect("/login")
+    
+    user = session_data['user']
+    comment = comments_collection.find_one({"_id": ObjectId(comment_id)})
+    quote = quotes_collection.find_one({"_id": ObjectId(comment['quote_id'])})
+
+    if comment['author'] == user or quote['owner'] == user:
+        comments_collection.delete_one({"_id": ObjectId(comment_id)})
+    else:
+        return redirect("/quotes")
+
+    return redirect("/quotes")
+
+@app.route('/quote/<id>', methods=['GET'])
+def get_quote(id):
+    try:
+        session_id = request.cookies.get("session_id", None)
+        if not session_id:
+            return redirect("/login")
+
+        session_data = session_db.session_collection.find_one({"session_id": session_id})
+        if not session_data:
+            return redirect("/login")
+
+        quote = quotes_collection.find_one({"_id": ObjectId(id)})
+        if not quote:
+            return "Quote not found", 404
+
+        # make the flask digestible by vue
+        quote['_id'] = str(quote['_id'])
+        comments = list(comments_collection.find({"quote_id": str(quote['_id'])}))
+        for comment in comments:
+            comment['_id'] = str(comment['_id'])
+
+        return render_template('view_post.html', quote=quote, comments=comments, user=session_data['user'])
+    except InvalidId:
+        return "Invalid quote ID", 400
+    except Exception as e:
+        return f"Internal Server Error: {e}", 500
+    
+@app.route('/edit_comment/<comment_id>', methods=['GET', 'POST'])
+def edit_comment(comment_id):
+    session_id = request.cookies.get("session_id", None)
+    if not session_id:
+        return redirect("/login")
+
+    session_data = session_db.session_collection.find_one({"session_id": session_id})
+    if not session_data:
+        return redirect("/login")
+
+    user = session_data['user']
+
+    if request.method == 'POST':
+        new_text = request.form['text']
+        comment = comments_collection.find_one({"_id": ObjectId(comment_id), "author": user})
+        if not comment:
+            return "Comment not found", 404
+
+        comments_collection.update_one({"_id": ObjectId(comment_id)}, {"$set": {"text": new_text}})
+        return redirect(f'/quote/{comment["quote_id"]}')
+
+    else:
+        comment = comments_collection.find_one({"_id": ObjectId(comment_id)})
+        if not comment:
+            return "Comment not found", 404
+
+        if comment['author'] == user:
+            return render_template('edit_comment.html', comment=comment)
+        else:
+            return redirect("/quote/<id> ")
