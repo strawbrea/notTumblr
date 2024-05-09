@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, make_response, redirect
 from mongita import MongitaClientDisk
 from bson import ObjectId
 from bson.errors import InvalidId
-import logging
+from datetime import datetime
+
 
 from passwords import hash_password  # (password) -> hashed_password, salt
 from passwords import check_password # (password, saved_hashed_password, salt):
@@ -36,24 +37,18 @@ def get_quotes():
 
     user = session_data["user"]
     quotes_collection = quotes_db.quotes_collection
+    # Fetch user's own quotes
+    my_quotes = list(quotes_collection.find({"owner": user}))
+    # Fetch public quotes
+    public_quotes = list(quotes_collection.find({"public": True}))
 
-    search_term = request.args.get('search_term', '').strip()
+    for quote in my_quotes + public_quotes:
+        quote["_id"] = str(quote["_id"])
 
-    if search_term:
-        data = list(quotes_collection.find({"$or": [
-            {"public": True, "text": {"$regex": search_term, "$options": "i"}},
-            {"owner": user, "text": {"$regex": search_term, "$options": "i"}}
-        ]}))
-        for item in data:
-            item["_id"] = str(item["_id"])
-        return render_template('quotes.html', data=data, user=user)
-    else:
-        my_quotes = list(quotes_collection.find({"owner": user}))
-        public_quotes = list(quotes_collection.find({"public": True}))
-        for quote in my_quotes + public_quotes:
-            quote["_id"] = str(quote["_id"])
-        return render_template("quotes.html", my_quotes=my_quotes, public_quotes=public_quotes, user=user)
-
+    return render_template("quotes.html", my_quotes=my_quotes, public_quotes=public_quotes, user=user)
+    response = make_response(html)
+    response.set_cookie("session_id", session_id)
+    return response
 
 @app.route("/login", methods=["GET"])
 def get_login():
@@ -166,15 +161,17 @@ def post_add():
     session_data = session_data[0]
     # get some information from the session
     user = session_data.get("user", "unknown user")
-    text = request.form.get("text", "")
+    text = request.form.get("text", "").strip()
     author = request.form.get("author", "")
     public = request.form.get("public", "") == "on"
     disable_comments = request.form.get("disable_comments") == "on"
     if text != "" and author != "":
         # open the quotes collection
         quotes_collection = quotes_db.quotes_collection
+        # Insert the current date
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # insert the quote
-        quote_data = {"owner": user, "text": text, "author": author, "public":public, "disable_comments":disable_comments}
+        quote_data = {"owner": user, "text": text, "author": author, "public":public, "disable_comments":disable_comments, "date": date}
         print(quote_data)
         quotes_collection.insert_one(quote_data)
     # usually do a redirect('....')
@@ -205,7 +202,7 @@ def post_edit():
         response = redirect("/login")
         return response
     _id = request.form.get("_id", None)
-    text = request.form.get("text", "")
+    text = request.form.get("text", "").strip()
     author = request.form.get("author", "")
     if _id:
         # open the quotes collection
@@ -248,6 +245,8 @@ def get_delete(id=None):
 @app.route('/search')
 def search():
     search_term = request.args.get('search_term', '').strip()
+    # print(f"Received search term: {search_term}")  # debug
+
     if not search_term:
         return redirect("/quotes")
     
@@ -259,20 +258,18 @@ def search():
         return redirect("/login")
 
     user = session_data['user']
-    quotes_collection = quotes_db.quotes_collection
+   # print(f"Searching for user: {user}")  # debug 
 
-    data = list(quotes_collection.find({"$or": [
-        {"public": True, "text": {"$regex": search_term, "$options": "i"}},
-        {"owner": user, "text": {"$regex": search_term, "$options": "i"}}
-    ]}))
+    data = list(quotes_collection.find({"public": True}))
+    
+    filtered_data = [quote for quote in data if search_term.lower() in quote.get("text", "").lower()]
 
-    print(f"Search term: {search_term}")  # Debugging output
-    print(f"Found {len(data)} items")  # Debugging output
+   # print(f"Found {len(filtered_data)} items")  # debug output
 
-    for item in data:
+    for item in filtered_data:
         item["_id"] = str(item["_id"])
 
-    return render_template('quotes.html', data=data, user=user)
+    return render_template('quotes.html', data=filtered_data, user=user)
 
 @app.route('/add_comment/<quote_id>', methods=['POST'])
 def add_comment(quote_id):
@@ -309,6 +306,10 @@ def delete_comment(comment_id):
 
 @app.route('/quote/<id>', methods=['GET'])
 def get_quote(id):
+
+    all_entries = list(quotes_collection.find({}))
+    print(f"All entries: {all_entries}")
+
     try:
         session_id = request.cookies.get("session_id", None)
         if not session_id:
@@ -347,7 +348,7 @@ def edit_comment(comment_id):
     user = session_data['user']
 
     if request.method == 'POST':
-        new_text = request.form['text']
+        new_text = request.form['text'].strip()
         comment = comments_collection.find_one({"_id": ObjectId(comment_id), "author": user})
         if not comment:
             return "Comment not found", 404

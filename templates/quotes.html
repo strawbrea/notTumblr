@@ -17,6 +17,7 @@
     <table>
         {% for item in data %}
         <tr>
+            <td>[{{ item["date"] }}]</td>
             <td>[{{ item["owner"] }}]</td>
             <td>{{ item["text"] }}</td>
             <td><em>--</em> <em>{{ item["author"] }}</em></td>
@@ -32,6 +33,7 @@
         <table>
             {% for item in public_quotes %}
             <tr>
+                <td>[{{ item["date"] }}]</td>
                 <td>[{{ item["owner"] }}]</td>
                 {% if not item["disable_comments"] %}
                 <td><a href="/quote/{{ item['_id'] }}">{{ item["text"] }}</a></td>
@@ -48,6 +50,7 @@
         <table>
             {% for item in my_quotes %}
             <tr>
+                <td>[{{ item["date"] }}]</td>
                 <td>[{{ item["owner"] }}]</td>
                 <td><a href="/quote/{{ item['_id'] }}">{{ item["text"] }}</a></td>
                 <td><em>--</em> <em>{{ item["author"] }}</em></td>
