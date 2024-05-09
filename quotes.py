@@ -214,13 +214,26 @@ def get_delete(id=None):
     if not session_id:
         response = redirect("/login")
         return response
+    
     if id:
-        # open the quotes collection
+        session_collection = session_db.session_collection
+        session_data = session_collection.find_one({"session_id": session_id})
+        if not session_data:
+            return redirect("/logout")
+        
+        user = session_data['user']
         quotes_collection = quotes_db.quotes_collection
-        # delete the item
-        quotes_collection.delete_one({"_id": ObjectId(id)})
-    # return to the quotes page
-    return redirect("/quotes")
+
+        # open the quotes collection
+        quote = quotes_collection.find_one({"_id": ObjectId(id)})
+        # check if owner
+        if quote and quote['owner'] == user:
+            # delete the item
+            quotes_collection.delete_one({"_id": ObjectId(id)})
+        else:
+            # User is not the owner, redirect or show an error
+            return redirect("/quotes")  # Redirecting for simplicity
+    return redirect("/quotes")    
 
 @app.route('/search')
 def search():
