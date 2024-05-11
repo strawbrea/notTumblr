@@ -29,7 +29,7 @@ const app = Vue.createApp({
             .catch(error => {
                 window.location.href = '/quotes'; 
                 console.error('Error adding quote:', error);
-                alert('Issues encountered while creating new post. Please check the quotes page for confirmation.');
+                alert('Issues encountered while creating new post.');
             });
         }
     }

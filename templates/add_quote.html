@@ -55,13 +55,14 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            alert('Quote added successfully!');
-                            // Reset the form
-                            this.newQuote = { text: '', author: '', public: false, disableComments: false };
+                            alert('New post created!');
+                            this.newQuote = { text: '', author: '', public: false, disableComments: false };  // Reset the form
+                            window.location.href = '/quotes';
                         } else {
-                            alert('Failed to add quote: ' + data.error);
-                        }
-                    })
+                            alert('Issue adding quote. ' + data.error + 'Please try again. ');
+                            window.location.href = '/quotes';  
+    }
+})
                     .catch(error => {
                         console.error('Error:', error);
                         alert('Failed to add quote due to an error.');

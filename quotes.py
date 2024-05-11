@@ -147,18 +147,18 @@ def get_add():
 @app.route('/api/add_quote', methods=['POST'])
 def api_add_quote():
     session_id = request.cookies.get("session_id")
-    print("Session ID received:", session_id)  # Check if session_id is received correctly
+    print("Session ID received:", session_id) 
     if not session_id:
         return jsonify({"success": False, "error": "Unauthorized - No Session"}), 401
 
     session_data = session_db.session_collection.find_one({"session_id": session_id})
-    print("Session data found:", session_data)  # Verify session data retrieval
+    print("Session data found:", session_data)
     if not session_data:
         return jsonify({"success": False, "error": "Session not found"}), 401
 
     user = session_data["user"]
     data = request.get_json()
-    print("Data received from client:", data)  # Log received data for inspection
+    print("Data received from client:", data) 
     text = data.get("text", "").strip()
     author = data.get("author", "").strip()
     public = data.get("public", False)
@@ -174,10 +174,10 @@ def api_add_quote():
             "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         quotes_collection.insert_one(quote)
-        print("Quote added:", quote)  # Debugging line to confirm insertion
+        # print("Quote added:", quote)  # debug
         return jsonify({"success": True, "quote": quote})
     else:
-        print("Missing information in data")
+        # print("Missing information in data") #debug
         return jsonify({"success": False, "error": "Missing information"}), 400
 
 @app.route("/edit/<id>", methods=["GET"])
