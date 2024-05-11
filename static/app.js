@@ -21,18 +21,15 @@ const app = Vue.createApp({
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Response received:', data);
-                if (data.success) {
-                    console.log('Redirecting to /quotes');
-                    window.location.href = '/quotes'; // Ensure this is the correct URL
-                } else {
-                    console.log('Error:', data.error);
-                    alert('Issues adding quote. Please try again. ' + data.error);
+                window.location.href = '/quotes'; 
+                if (!data.success) {
+                    alert('Issue creating new post. ' + (data.error || 'Unknown error'));
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('Issues adding quote. Please try again.');
+                window.location.href = '/quotes'; 
+                console.error('Error adding quote:', error);
+                alert('Issues encountered while creating new post. Please check the quotes page for confirmation.');
             });
         }
     }
