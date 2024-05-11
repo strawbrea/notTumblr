@@ -1,44 +1,74 @@
-<html>
-    <body>
-        <h1>Add a quote...</h1>
-        <form action="/add" method="POST">
-            <table>
-                <tr>
-                    <td>
-                        <label for="text">Quote</label>
-                    </td>
-                    <td>
-                        <textarea id="text" name="text" cols="40" rows="5"></textarea>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="author">Author</label>
-                    </td>
-                    <td>
-                        <input type="text" id="author" name="author"/>        
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="public">Public?</label>
-                    </td>
-                    <td>
-                        <input type="checkbox" id="public" name="public"/>        
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="disable_comments">Disable Comments?</label>
-                    </td>
-                    <td>
-                        <input type="checkbox" id="disable_comments" name="disable_comments"/>        
-                    </td>
-                </tr>
-            </table>
-            <button type="submit">Submit</button>
-            <br>
-            <a href="/">Cancel</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Quote</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3"></script> 
+    <script src="../static/app.js"></script>
+</head>
+<body>
+    <div id="app" class="container mt-4">
+        <h1>Add a Quote</h1>
+        <form @submit.prevent="addQuote">
+            <div class="mb-3">
+                <label for="text" class="form-label">Quote Text</label>
+                <input type="text" class="form-control" v-model="newQuote.text" placeholder="Enter quote text">
+            </div>
+            <div class="mb-3">
+                <label for="author" class="form-label">Author</label>
+                <input type="text" class="form-control" v-model="newQuote.author" placeholder="Author's name">
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" v-model="newQuote.public">
+                <label class="form-check-label">Public</label>
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" v-model="newQuote.disableComments">
+                <label class="form-check-label">Disable Comments</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Quote</button>
         </form>
-    </body>
+    </div>
+
+    <script>
+        Vue.createApp({
+            data() {
+                return {
+                    newQuote: {
+                        text: '',
+                        author: '',
+                        public: false,
+                        disableComments: false
+                    }
+                };
+            },
+            methods: {
+                addQuote() {
+                    fetch('/api/add_quote', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(this.newQuote)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Quote added successfully!');
+                            // Reset the form
+                            this.newQuote = { text: '', author: '', public: false, disableComments: false };
+                        } else {
+                            alert('Failed to add quote: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to add quote due to an error.');
+                    });
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
 </html>

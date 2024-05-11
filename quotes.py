@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, make_response, redirect
+from flask import Flask, render_template, request, make_response, redirect, jsonify
 from mongita import MongitaClientDisk
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -144,39 +144,41 @@ def get_add():
     return render_template("add_quote.html")
 
 
-@app.route("/add", methods=["POST"])
-def post_add():
-    session_id = request.cookies.get("session_id", None)
+@app.route('/api/add_quote', methods=['POST'])
+def api_add_quote():
+    session_id = request.cookies.get("session_id")
+    print("Session ID received:", session_id)  # Check if session_id is received correctly
     if not session_id:
-        response = redirect("/login")
-        return response
-    # open the session collection
-    session_collection = session_db.session_collection
-    # get the data for this session
-    session_data = list(session_collection.find({"session_id": session_id}))
-    if len(session_data) == 0:
-        response = redirect("/logout")
-        return response
-    assert len(session_data) == 1
-    session_data = session_data[0]
-    # get some information from the session
-    user = session_data.get("user", "unknown user")
-    text = request.form.get("text", "").strip()
-    author = request.form.get("author", "")
-    public = request.form.get("public", "") == "on"
-    disable_comments = request.form.get("disable_comments") == "on"
-    if text != "" and author != "":
-        # open the quotes collection
-        quotes_collection = quotes_db.quotes_collection
-        # Insert the current date
-        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # insert the quote
-        quote_data = {"owner": user, "text": text, "author": author, "public":public, "disable_comments":disable_comments, "date": date}
-        print(quote_data)
-        quotes_collection.insert_one(quote_data)
-    # usually do a redirect('....')
-    return redirect("/quotes")
+        return jsonify({"success": False, "error": "Unauthorized - No Session"}), 401
 
+    session_data = session_db.session_collection.find_one({"session_id": session_id})
+    print("Session data found:", session_data)  # Verify session data retrieval
+    if not session_data:
+        return jsonify({"success": False, "error": "Session not found"}), 401
+
+    user = session_data["user"]
+    data = request.get_json()
+    print("Data received from client:", data)  # Log received data for inspection
+    text = data.get("text", "").strip()
+    author = data.get("author", "").strip()
+    public = data.get("public", False)
+    disable_comments = data.get("disable_comments", False)
+
+    if text and author:
+        quote = {
+            "owner": user,
+            "text": text,
+            "author": author,
+            "public": public,
+            "disable_comments": disable_comments,
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        quotes_collection.insert_one(quote)
+        print("Quote added:", quote)  # Debugging line to confirm insertion
+        return jsonify({"success": True, "quote": quote})
+    else:
+        print("Missing information in data")
+        return jsonify({"success": False, "error": "Missing information"}), 400
 
 @app.route("/edit/<id>", methods=["GET"])
 def get_edit(id=None):
@@ -238,7 +240,7 @@ def get_delete(id=None):
             # delete the item
             quotes_collection.delete_one({"_id": ObjectId(id)})
         else:
-            # User is not the owner, redirect or show an error
+            # User is not the owner, redirect or show an error 
             return redirect("/quotes")  # Redirecting for simplicity
     return redirect("/quotes")    
 

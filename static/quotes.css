@@ -1,0 +1,29 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: ivory;
+}
+header, footer {
+    color: lavender;
+    background-color: cream;
+    padding: 10px;
+}
+.search-bar {
+    background-color: lilac;
+    border: none;
+    padding: 8px;
+    width: 90%;
+}
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table td, .table th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+.loader {
+    height: 2px;
+    background-color: white;
+    width: 0;
+    transition: width 0.5s;
+}
