@@ -1,29 +1,57 @@
 body {
     font-family: 'Arial', sans-serif;
-    background-color: ivory;
+    background-color: #f5f3f4;
+    color: #6a5d80;
 }
-header, footer {
-    color: lavender;
-    background-color: cream;
-    padding: 10px;
+
+.navbar, .footer {
+    background-color: #e2d3f5;
 }
-.search-bar {
-    background-color: lilac;
-    border: none;
-    padding: 8px;
-    width: 90%;
+
+.btn-primary {
+    background-color: #bba4d3;
+    border-color: #bba4d3;
 }
+
+.btn-primary:hover {
+    background-color: #9c85b5;
+    border-color: #9c85b5;
+}
+
+.form-control, .form-check-input {
+    border-color: #d1c4e9;
+}
+
+.card {
+    background-color: #faf4ff;
+    border-radius: 15px;
+}
+
+.alert {
+    background-color: #ecdaf2;
+    border-color: #dabcef;
+}
+
 .table {
     width: 100%;
     border-collapse: collapse;
 }
+
 .table td, .table th {
     border: 1px solid #ddd;
     padding: 8px;
 }
+
 .loader {
     height: 2px;
     background-color: white;
     width: 0;
     transition: width 0.5s;
+}
+
+.search-bar {
+    background-color: lilac;
+    border: none;
+    padding: 8px;
+    width: 90%;
 }
