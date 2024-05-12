@@ -24,22 +24,24 @@
                 <label class="form-check-label">Public</label>
             </div>
             <div class="mb-3 form-check">
-                <input type="checkbox" class="form-check-input" v-model="newQuote.disableComments">
+                <input type="checkbox" class="form-check-input" v-model="newQuote.disable_comments">
                 <label class="form-check-label">Disable Comments</label>
             </div>
+            <!--  <div>Disable Comments: [% newQuote.disable_comments %]</div> # debug -->
             <button type="submit" class="btn btn-primary">Add Quote</button>
         </form>
     </div>
 
     <script>
         Vue.createApp({
+            delimiters: ['[%', '%]'], 
             data() {
                 return {
                     newQuote: {
                         text: '',
                         author: '',
                         public: false,
-                        disableComments: false
+                        disable_comments: false
                     }
                 };
             },
@@ -56,13 +58,13 @@
                     .then(data => {
                         if (data.success) {
                             alert('New post created!');
-                            this.newQuote = { text: '', author: '', public: false, disableComments: false };  // Reset the form
+                            this.newQuote = { text: '', author: '', public: false, disable_comments: false };
                             window.location.href = '/quotes';
                         } else {
-                            alert('Issue adding quote. ' + data.error + 'Please try again. ');
+                            alert('Issue adding quote. ' + data.error + ' Please try again.');
                             window.location.href = '/quotes';  
-    }
-})
+                        }
+                    })
                     .catch(error => {
                         console.error('Error:', error);
                         alert('Failed to add quote due to an error.');

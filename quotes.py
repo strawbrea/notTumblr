@@ -173,6 +173,10 @@ def api_add_quote():
             "disable_comments": disable_comments,
             "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
+
+        data = request.get_json()
+        print("Received data:", data)
+        
         quotes_collection.insert_one(quote)
         # print("Quote added:", quote)  # debug
         return jsonify({"success": True, "quote": quote})
