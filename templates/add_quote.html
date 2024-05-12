@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Add Quote</title>
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="/static/quotes.css">
     <script src="https://unpkg.com/vue@3"></script>
 </head>
+
 <body>
     <div id="app" class="container mt-4">
         <h1>Add a Quote</h1>
@@ -34,7 +36,7 @@
 
     <script>
         Vue.createApp({
-            delimiters: ['[%', '%]'], 
+            delimiters: ['[%', '%]'],
             data() {
                 return {
                     newQuote: {
@@ -54,24 +56,25 @@
                         },
                         body: JSON.stringify(this.newQuote)
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('New post created!');
-                            this.newQuote = { text: '', author: '', public: false, disable_comments: false };
-                            window.location.href = '/quotes';
-                        } else {
-                            alert('Issue adding quote. ' + data.error + ' Please try again.');
-                            window.location.href = '/quotes';  
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Failed to add quote due to an error.');
-                    });
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('New post created!');
+                                this.newQuote = { text: '', author: '', public: false, disable_comments: false };
+                                window.location.href = '/quotes';
+                            } else {
+                                alert('Issue adding quote. ' + data.error + ' Please try again.');
+                                window.location.href = '/quotes';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Failed to add quote due to an error.');
+                        });
                 }
             }
         }).mount('#app');
     </script>
 </body>
+
 </html>

@@ -244,8 +244,7 @@ def get_delete(id=None):
             # delete the item
             quotes_collection.delete_one({"_id": ObjectId(id)})
         else:
-            # User is not the owner, redirect or show an error 
-            return redirect("/quotes")  # Redirecting for simplicity
+            return redirect("/quotes") 
     return redirect("/quotes")    
 
 @app.route('/search')
@@ -385,12 +384,12 @@ def comment_delete(comment_id):
     user = session_data['user']
     comment = comments_collection.find_one({"_id": ObjectId(comment_id)})
 
-    # Fetch the quote to check if the user is the quote owner
+    # check if owner
     quote = quotes_collection.find_one({"_id": ObjectId(comment['quote_id'])})
     if not quote:
         return "Quote not found", 404
 
-    # Check if the current user is the comment author or the quote owner
+    # check if owner
     if comment['author'] == user or quote['owner'] == user:
         comments_collection.delete_one({"_id": ObjectId(comment_id)})
         return redirect(f'/quote/{comment["quote_id"]}')
